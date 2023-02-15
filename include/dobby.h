@@ -149,8 +149,14 @@ typedef void (*PostCallTy)(DobbyRegisterContext *ctx, const InterceptEntry *info
 int DobbyWrap(void *function_address, PreCallTy pre_call, PostCallTy post_call);
 #endif
 
-// function inline hook
+// hook and commit function
 int DobbyHook(void *address, dobby_dummy_func_t replace_func, dobby_dummy_func_t *origin_func);
+
+// prepare trampoline
+int DobbyPrepare(void *address, dobby_dummy_func_t replace_func, dobby_dummy_func_t *origin_func);
+
+// commit hook
+int DobbyCommit(void *address);
 
 // dynamic binary instruction instrument
 // [!!! READ ME !!!]

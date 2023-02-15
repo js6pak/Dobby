@@ -76,6 +76,7 @@ void InterceptRouting::Active() {
     ERROR_LOG("[intercept routing] active failed");
     return;
   }
+  entry_->is_committed = true;
   DLOG(0, "[intercept routing] active");
 }
 

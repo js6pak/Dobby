@@ -26,5 +26,7 @@ typedef struct InterceptEntry {
 
   bool thumb_mode;
 
+  bool is_committed = false;
+
   InterceptEntry(InterceptEntryType type, addr_t address);
 } InterceptEntry;

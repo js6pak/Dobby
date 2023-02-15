@@ -4,6 +4,13 @@
 #include "InterceptRouting/Routing/FunctionInlineHook/FunctionInlineHookRouting.h"
 
 PUBLIC int DobbyHook(void *address, dobby_dummy_func_t replace_func, dobby_dummy_func_t *origin_func) {
+  int result = DobbyPrepare(address, replace_func, origin_func);
+  if (result != 0)
+    return result;
+  return DobbyCommit(address);
+}
+
+PUBLIC int DobbyPrepare(void *address, dobby_dummy_func_t replace_func, dobby_dummy_func_t *origin_func) {
   if (!address) {
     ERROR_LOG("function address is 0x0");
     return RS_FAILED;
@@ -23,7 +30,7 @@ PUBLIC int DobbyHook(void *address, dobby_dummy_func_t replace_func, dobby_dummy
   }
 #endif
 
-  DLOG(0, "----- [DobbyHook:%p] -----", address);
+  DLOG(0, "----- [DobbyPrepare:%p] -----", address);
 
   // check if already register
   auto entry = Interceptor::SharedInstance()->find((addr_t)address);
@@ -43,9 +50,26 @@ PUBLIC int DobbyHook(void *address, dobby_dummy_func_t replace_func, dobby_dummy
     *origin_func = (dobby_dummy_func_t)entry->relocated_addr;
   }
 
-  routing->Commit();
-
   Interceptor::SharedInstance()->add(entry);
 
   return RS_SUCCESS;
+}
+
+PUBLIC int DobbyCommit(void *address) {
+  if (!address) {
+    ERROR_LOG("function address is 0x0");
+    return -1;
+  }
+
+  // check if already hooked
+  auto entry = Interceptor::SharedInstance()->find((addr_t)address);
+  auto route = entry->routing;
+  if (entry->is_committed) {
+    ERROR_LOG("function %p already been hooked.", address);
+    return -1;
+  }
+
+  // code patch & hijack original control flow entry
+  route->Commit();
+  return 0;
 }
