@@ -20,9 +20,11 @@ PUBLIC int DobbyDestroy(void *address) {
 #endif
   auto entry = Interceptor::SharedInstance()->find((addr_t)address);
   if (entry) {
-    uint8_t *buffer = entry->origin_insns;
-    uint32_t buffer_size = entry->origin_insn_size;
-    DobbyCodePatch(address, buffer, buffer_size);
+    if (entry->is_committed) {
+      uint8_t *buffer = entry->origin_insns;
+      uint32_t buffer_size = entry->origin_insn_size;
+      DobbyCodePatch(address, buffer, buffer_size);
+    }
     Interceptor::SharedInstance()->remove((addr_t)address);
     return 0;
   }

@@ -120,8 +120,14 @@ typedef struct {
 // memory code patch
 int DobbyCodePatch(void *address, uint8_t *buffer, uint32_t buffer_size);
 
-// function inline hook
+// hook and commit function
 int DobbyHook(void *address, dobby_dummy_func_t replace_func, dobby_dummy_func_t *origin_func);
+
+// prepare trampoline
+int DobbyPrepare(void *address, dobby_dummy_func_t replace_func, dobby_dummy_func_t *origin_func);
+
+// commit hook
+int DobbyCommit(void *address);
 
 // dynamic binary instruction instrument
 // for Arm64, can't access q8 - q31, unless enable full floating-point register pack
