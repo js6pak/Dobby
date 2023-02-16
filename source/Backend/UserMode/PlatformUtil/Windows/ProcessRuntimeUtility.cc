@@ -10,7 +10,7 @@
 // GetProcessMemoryLayout
 
 static bool memory_region_comparator(MemRange a, MemRange b) {
-  return (a.address > b.address);
+  return (a.start > b.start);
 }
 
 // https://gist.github.com/jedwardsol/9d4fe1fd806043a5767affbd200088ca
