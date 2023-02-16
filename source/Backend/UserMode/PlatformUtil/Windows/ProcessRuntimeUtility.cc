@@ -10,13 +10,13 @@
 // GetProcessMemoryLayout
 
 static bool memory_region_comparator(MemRange a, MemRange b) {
-  return (a.address > b.address);
+  return (a.start > b.start);
 }
 
 // https://gist.github.com/jedwardsol/9d4fe1fd806043a5767affbd200088ca
 
-std::vector<MemRange> ProcessMemoryLayout;
-std::vector<MemRange> ProcessRuntimeUtility::GetProcessMemoryLayout() {
+std::vector<MemRegion> ProcessMemoryLayout;
+const std::vector<MemRegion> &ProcessRuntimeUtility::GetProcessMemoryLayout() {
   if (!ProcessMemoryLayout.empty()) {
     ProcessMemoryLayout.clear();
   }
@@ -53,7 +53,7 @@ std::vector<MemRange> ProcessRuntimeUtility::GetProcessMemoryLayout() {
       break;
     }
 
-    ProcessMemoryLayout.push_back(MemRange{(void *)region.BaseAddress, region.RegionSize, permission});
+    ProcessMemoryLayout.push_back(MemRegion{(addr_t)region.BaseAddress, (size_t)region.RegionSize, permission});
   }
   return ProcessMemoryLayout;
 }
@@ -63,7 +63,7 @@ std::vector<MemRange> ProcessRuntimeUtility::GetProcessMemoryLayout() {
 
 std::vector<RuntimeModule> ProcessModuleMap;
 
-std::vector<RuntimeModule> ProcessRuntimeUtility::GetProcessModuleMap() {
+const std::vector<RuntimeModule> &ProcessRuntimeUtility::GetProcessModuleMap() {
   if (!ProcessMemoryLayout.empty()) {
     ProcessMemoryLayout.clear();
   }

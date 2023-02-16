@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <assert.h>
 
 #include <windows.h>
 
@@ -12,9 +13,10 @@ int GetProtectionFromMemoryPermission(MemoryPermission access) {
     return PAGE_EXECUTE_READWRITE;
   else if (kReadExecute == access)
     return PAGE_EXECUTE_READ;
+  UNREACHABLE();
 }
 
-int OSMemory::AllocPageSize() {
+int AllocPageSize() {
   static int lastRet = -1;
   if (lastRet == -1) {
     SYSTEM_INFO si;
@@ -34,11 +36,15 @@ int OSMemory::PageSize() {
   return lastRet;
 }
 
-void *OSMemory::Allocate(void *address, int size, MemoryPermission access) {
-  DCHECK_EQ(0, reinterpret_cast<uintptr_t>(address) % AllocPageSize());
+void *OSMemory::Allocate(size_t size, MemoryPermission access) {
+  return OSMemory::Allocate(size, access, nullptr);
+}
+
+void *OSMemory::Allocate(size_t size, MemoryPermission access, void *fixed_address) {
+  DCHECK_EQ(0, reinterpret_cast<uintptr_t>(fixed_address) % AllocPageSize());
   DCHECK_EQ(0, size % PageSize());
 
-  void *result = VirtualAlloc(address, size, MEM_COMMIT | MEM_RESERVE, PAGE_NOACCESS);
+  void *result = VirtualAlloc(fixed_address, size, MEM_COMMIT | MEM_RESERVE, PAGE_NOACCESS);
   OSMemory::SetPermission(result, size, kReadWriteExecute);
   if (result == nullptr)
     return nullptr;
@@ -49,21 +55,21 @@ void *OSMemory::Allocate(void *address, int size, MemoryPermission access) {
 }
 
 // static
-bool OSMemory::Free(void *address, const int size) {
+bool OSMemory::Free(void *address, size_t size) {
   DCHECK_EQ(0, reinterpret_cast<uintptr_t>(address) % PageSize());
   DCHECK_EQ(0, size % PageSize());
 
   return VirtualFree(address, size, MEM_RELEASE);
 }
 
-bool OSMemory::Release(void *address, int size) {
+bool OSMemory::Release(void *address, size_t size) {
   DCHECK_EQ(0, reinterpret_cast<uintptr_t>(address) % PageSize());
   DCHECK_EQ(0, size % PageSize());
 
   return OSMemory::Free(address, size);
 }
 
-bool OSMemory::SetPermission(void *address, int size, MemoryPermission access) {
+bool OSMemory::SetPermission(void *address, size_t size, MemoryPermission access) {
   DCHECK_EQ(0, reinterpret_cast<uintptr_t>(address) % PageSize());
   DCHECK_EQ(0, size % PageSize());
 

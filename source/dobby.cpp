@@ -1,6 +1,7 @@
 #include "dobby_internal.h"
 #include "Interceptor.h"
 
+#ifndef _MSC_VER
 __attribute__((constructor)) static void ctor() {
   DLOG(-1, "================================");
   DLOG(-1, "Dobby");
@@ -8,6 +9,7 @@ __attribute__((constructor)) static void ctor() {
 
   DLOG(-1, "dobby in debug log mode, disable with cmake flag \"-DDOBBY_DEBUG=OFF\"");
 }
+#endif
 
 PUBLIC const char *DobbyGetVersion() {
   return __DOBBY_BUILD_VERSION__;
