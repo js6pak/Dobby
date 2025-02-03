@@ -1,0 +1,143 @@
+name: Build
+
+on: push
+
+jobs:
+  win-build:
+    runs-on: windows-latest
+    name: Windows Build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: |
+          cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -D"Plugin.SymbolResolver=OFF" -A x64 -B build64
+          cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -D"Plugin.SymbolResolver=OFF" -A Win32 -B build32
+
+      - name: Build x64
+        run: |
+          cmake --build build64
+
+      - name: Build x86
+        run: |
+          cmake --build build32
+
+      - name: Collect artifacts
+        shell: cmd
+        run: |
+          mkdir build_result
+          copy "build32\RelWithDebInfo\dobby.dll" "build_result\dobby_x86.dll"
+          copy "build64\RelWithDebInfo\dobby.dll" "build_result\dobby_x64.dll"
+
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows
+          path: build_result
+
+  linux-build:
+    runs-on: ubuntu-latest
+    name: Linux Build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install cmake ninja-build gcc-multilib g++-multilib libc6-dev-i386
+
+      - name: Configure CMake
+        run: |
+          cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DPlugin.SymbolResolver=OFF -B build64 -G Ninja
+          cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DPlugin.SymbolResolver=OFF -B build86 -G Ninja \
+                -DCMAKE_CXX_FLAGS="-m32" -DCMAKE_C_FLAGS="-m32" -DCMAKE_SHARED_LINKER_FLAGS="-m32"
+
+      - name: Build x64
+        run: |
+          cmake --build build64
+
+      - name: Build x86
+        run: |
+          cmake --build build86
+
+      - name: Collect artifacts
+        run: |
+          mkdir build_result
+          cp build64/libdobby.so build_result/libdobby_x64.so
+          cp build86/libdobby.so build_result/libdobby_x86.so
+
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Linux
+          path: build_result
+
+  macos-build:
+    runs-on: macos-latest
+    name: macOS Build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps
+        run: |
+          brew install ninja
+
+      - name: Configure CMake
+        run: |
+          cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DPlugin.SymbolResolver=OFF -B build-x64 -G Ninja \
+                -DCMAKE_OSX_ARCHITECTURES=x86_64 -DCMAKE_SYSTEM_PROCESSOR=x86_64
+          
+          cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DPlugin.SymbolResolver=OFF -B build-arm64 -G Ninja \
+                -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_SYSTEM_PROCESSOR=arm64
+
+      - name: Build x64
+        run: |
+          cmake --build build-x64
+
+      - name: Build arm64
+        run: |
+          cmake --build build-arm64
+
+      - name: Collect artifacts
+        run: |
+          mkdir build_result
+          cp build-x64/libdobby.dylib build_result/libdobby_x64.dylib
+          cp build-arm64/libdobby.dylib build_result/libdobby_arm64.dylib
+
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macOS
+          path: build_result
+
+  collect:
+    permissions: write-all
+    runs-on: ubuntu-latest
+    name: Collect build
+    needs: [win-build, linux-build, macos-build]
+
+    steps:
+      - name: Download a Build Artifact
+        uses: actions/download-artifact@v4
+
+      - name: ZIP versions
+        run: |
+          zip -r -j dobby-win.zip Windows/*.dll
+          zip -r -j dobby-linux.zip Linux/*.so
+          zip -r -j dobby-macos.zip macOS/*.dylib
+
+      - name: Automatic Releases
+        uses: marvinpinto/action-automatic-releases@latest
+        if: github.ref == 'refs/heads/master'
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
+          prerelease: true
+          title: "CI"
+          files: |
+            dobby-win.zip
+            dobby-linux.zip
+            dobby-macos.zip
