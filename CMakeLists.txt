@@ -269,26 +269,6 @@ set(dobby.HEADER_FILE_LIST
 
 # ---
 
-# add build version
-string(TIMESTAMP TODAY "%Y%m%d")
-set(VERSION_REVISION "-${TODAY}")
-if (EXISTS "${CMAKE_SOURCE_DIR}/.git")
-  execute_process(
-    COMMAND git rev-parse --short --verify HEAD
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    OUTPUT_VARIABLE VERSION_COMMIT_HASH
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
-  if (VERSION_COMMIT_HASH)
-    set(VERSION_REVISION "${VERSION_REVISION}-${VERSION_COMMIT_HASH}")
-  endif ()
-endif ()
-set(DOBBY_BUILD_VERSION "Dobby${VERSION_REVISION}")
-set(compile_definitions "${compile_definitions} -D__DOBBY_BUILD_VERSION__=\"${DOBBY_BUILD_VERSION}\"")
-message(STATUS "[Dobby] ${DOBBY_BUILD_VERSION}")
-
-# ---
-
 set(SOURCE_FILE_LIST
   ${dobby.HEADER_FILE_LIST}
   ${dobby.SOURCE_FILE_LIST}
